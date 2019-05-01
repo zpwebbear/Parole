@@ -1,135 +1,88 @@
 const C = require('./lib/constants');
 
-/**
- * @class PromiseCustom
- * @param {Function} callback
- * @constructor
- */
-class PromiseCustom {
+// It necessary to implement native behaviour of promise
+const defaultRejected = value => value;
 
-    /**
-     * 
-     * @param {Function} callback 
-     */
+class PromiseSecond {
+
     constructor(callback) {
-        this.callback = callback;
+        if (typeof callback !== 'function') {
+            throw new Error('Promise constructor argument must be a function');
+        }
 
         this._state = C.PENDING;
-
-        this._result = undefined;
-        this._fulfilledJobs = [];
-        this._rejectedJobs = [];
         this._jobs = [];
 
-        if (typeof callback === 'function') {
-            this._makePromise(this, callback)
-        } else {
-            throw 'PromiseCustom constructor argument must be a function'
-        }
-    }
-
-    /**
-     * 
-     * @param {Function} onFullfilled 
-     * @param {Function} onRejected 
-     */
-    then(onFullfilled, onRejected = this._throw) {
-        const parent = this;
-        const newPromise = new this.constructor((resolve, reject)=>{
-            return (onFullfilled, onRejected) =>{
-                setTimeout(()=>{
-
-                })
+        const resolve = result => {
+            if (this._state !== C.PENDING) {
+                return;
             }
-        })
 
-        if (this._isNext) {
-            newPromise._subscribe(onFullfilled, onRejected)
-            newPromise.resolve.bind(this)
-        } else {
-            this._subscribe(onFullfilled, onRejected)
-        }
+            this._state = C.FULFILLED;
+            this._promiseResult = result;
 
-        return newPromise
-    }
-    
+            for (const { onFulfilled } of this._jobs) {
+                onFulfilled(result);
+            }
+        };
 
-    /**
-     * 
-     * @param {Function} onRejected 
-     */
-    catch(onRejected) {
-        return this.then(null, onRejected);
-    }
+        const reject = error => {
+            if (this._state !== C.PENDING) {
+                return;
+            }
+            this._state = C.REJECTED;
+            this._promiseResult = error;
 
-    /**
-     * 
-     * @param {*} err 
-     */
-    _throw(err) {
-        console.error(err)
-    }
+            for (const { onRejected } of this._jobs) {
+                onRejected(error);
+            }
+        };
 
-    /**
-     * 
-     * @param {PromiseCustom} promise 
-     * @param {Function} callback 
-     */
-    _makePromise(promise, callback) {
-        this.callback.call(
-            promise,
-            this.resolve.bind(promise),
-            this.reject.bind(promise)
-        )
-    }
-
-
-    /**
-     * 
-     * @param {*} value 
-     */
-    resolve(value) {
-        console.log('RESOLVE', value)
-        if (this._state !== C.PENDING) {
-            return;
-        }
-
-        this._result = value;
-        this._state = C.FULFILLED;
-        this._jobs = [...this._fulfilledJobs]
-  
-        this._schedule()
-    }
-
-    /**
-     * 
-     * @param {*} reason 
-     */
-    reject(reason) {
-        if (this._state !== C.PENDING) {
-            return;
-        }
-
-        this._result = reason;
-        this._state = C.REJECTED;
-        this._jobs = [...this._rejectedJobs]
-        this._schedule();
-    }
-
-    _subscribe(onFullfilled, onRejected) {
-        this._fulfilledJobs.push(onFullfilled)
-    }
-
-    _schedule() {
-        this._jobs.forEach(this._hadleJob, this)
-    }
-
-    _hadleJob(job){
-        if(job){
-            setTimeout(job, 1, this._result)
+        try {
+            callback(resolve, reject);
+        } catch (error) {
+            reject(error);
         }
     }
+
+    then(onFulfilled, onRejected = defaultRejected) {
+
+        return new this.constructor((resolve, reject) => {
+
+            const _onFulfilled = result => {
+                try {
+                    resolve(onFulfilled(result));
+                } catch (err) {
+                    reject(err);
+                }
+            };
+
+            const _onRejected = error => {
+                try {
+                    reject(onRejected(error));
+                } catch (_err) {
+                    reject(_err);
+                }
+            };
+
+            switch (this._state) {
+                case C.FULFILLED:
+                    onFulfilled(this._promiseResult);
+                    break;
+                case C.REJECTED:
+                    onRejected(this._promiseResult);
+                    break;
+                default:
+                    this._jobs.push({ onFulfilled: _onFulfilled, onRejected: _onRejected });
+            }
+        });
+    }
+
+    catch(onRejected){
+        // const self = this;
+        this.then(undefined, onRejected);
+    }
+
 }
 
-
-module.exports = PromiseCustom;
+module.exports = PromiseSecond;
