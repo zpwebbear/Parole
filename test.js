@@ -8,28 +8,21 @@ const testNative = new Promise((resolve, reject)=>{
     setTimeout(resolve, 1000, 1)
 })
 
-let customResult = testCustom.then();
+// let customResult = testCustom.then();
 
-console.log('THEN CUSTOM RESULT', customResult)
+// console.log('THEN CUSTOM RESULT', customResult)
 
-let nativeResult = testNative.then();
+// let nativeResult = testNative.then();
 
-console.log('THEN NATIVE RESULT', nativeResult)
+// console.log('THEN NATIVE RESULT', nativeResult)
 
 
-// testCustom.then(result =>{
-//     console.log('result from custom then', result)
-//     return 'to second custom';
-// }).then(result =>{
-//     console.log('result from custom second then', result)
-// })
-
-// testCustom.then(result =>{
-//     console.log('result from custom then second subscribe', result)
-//     return 'to second custom';
-// }).then(result =>{
-//     console.log('result from custom then second subscribe', result)
-// })
+testCustom.then(result =>{
+    console.log('result from custom then', result)
+    return 'to second custom';
+}).then(result =>{
+    console.log('result from custom second then', result)
+})
 
 
 // console.log(testCustom)

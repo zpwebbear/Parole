@@ -34,10 +34,10 @@ class PromiseCustom {
      * @param {Function} onRejected 
      */
     then(onFullfilled, onRejected = this._throw) {
-        
-        this._subscribe(onFullfilled, onRejected, this._result)
 
         const nextPromise = new this.constructor(function(){});
+
+        this._subscribe(onFullfilled, onRejected, this._result)      
 
         return nextPromise
     }
