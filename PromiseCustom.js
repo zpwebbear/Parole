@@ -34,9 +34,10 @@ class PromiseCustom {
      * @param {Function} onRejected 
      */
     then(onFullfilled, onRejected = this._throw) {
-        const nextPromise = new this.constructor(function(){});
         
         this._subscribe(onFullfilled, onRejected, this._result)
+
+        const nextPromise = new this.constructor(function(){});
 
         return nextPromise
     }
@@ -88,7 +89,6 @@ class PromiseCustom {
         this._result = value;
         this._state  = C.FULFILLED;
         this._jobs = [...this._fulfilledJobs]
-        console.log('RESOLVE', this._fulfilledJobs)
         this._schedule();
     }
 
@@ -125,7 +125,9 @@ class PromiseCustom {
 
     _schedule(){
         this._jobs.forEach(job =>{
-            setTimeout(job.callback, 1, this._result)
+            if(job.callback){
+                setTimeout(job.callback, 1, this._result)
+            }
         })
     }
 }
