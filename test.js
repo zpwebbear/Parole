@@ -1,7 +1,7 @@
 const PromiseCustom = require('./PromiseCustom');
 
 const testCustom = new PromiseCustom((resolve, reject)=>{
-    setTimeout(resolve, 1000, 1)
+    setTimeout(reject, 1000, 1)
 })
 
 testCustom.then(result =>{
