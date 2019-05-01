@@ -1,5 +1,8 @@
 const C = require('./lib/constants');
 
+// It necessary to implement native behaviour of promise
+const defaultRejected = value => value;
+
 class PromiseSecond {
 
     constructor(callback) {
@@ -42,18 +45,41 @@ class PromiseSecond {
         }
     }
 
-    then(onFulfilled, onRejected) {
-        switch (this._state) {
-            case C.FULFILLED:
-                onFulfilled(this._promiseResult);
-                break;
-            case C.REJECTED:
-                onRejected(this._promiseResult);
-                break;
-            default:
-                this._jobs.push({ onFulfilled, onRejected });
-        }
+    then(onFulfilled, onRejected = defaultRejected) {
+        return new this.constructor((resolve, reject) => {
+            const _onFulfilled = result => {
+                try {
+                    resolve(onFulfilled(result));
+                } catch (err) {
+                    reject(err);
+                }
+            };
+            const _onRejected = error => {
+                try {
+                    reject(onRejected(error));
+                } catch (_err) {
+                    reject(_err);
+                }
+            };
+
+            switch (this._state) {
+                case C.FULFILLED:
+                    onFulfilled(this._promiseResult);
+                    break;
+                case C.REJECTED:
+                    onRejected(this._promiseResult);
+                    break;
+                default:
+                    this._jobs.push({ onFulfilled: _onFulfilled, onRejected: _onRejected });
+            }
+        });
     }
+
+    catch(onRejected){
+        const self = this;
+        self.then(undefined, onRejected);
+    }
+
 }
 
 module.exports = PromiseSecond;
