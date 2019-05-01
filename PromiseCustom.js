@@ -20,10 +20,10 @@ class PromiseCustom {
         this._fulfilledJobs = [];
         this._rejectedJobs = [];
         this._jobs = [];
-        
-        if (typeof callback === 'function'){
+
+        if (typeof callback === 'function') {
             this._makePromise(this, callback)
-        }else{
+        } else {
             throw 'PromiseCustom constructor argument must be a function'
         }
     }
@@ -34,13 +34,25 @@ class PromiseCustom {
      * @param {Function} onRejected 
      */
     then(onFullfilled, onRejected = this._throw) {
+        const parent = this;
+        const newPromise = new this.constructor((resolve, reject)=>{
+            return (onFullfilled, onRejected) =>{
+                setTimeout(()=>{
 
-        const nextPromise = new this.constructor(function(){});
+                })
+            }
+        })
 
-        this._subscribe(onFullfilled, onRejected, this._result)      
+        if (this._isNext) {
+            newPromise._subscribe(onFullfilled, onRejected)
+            newPromise.resolve.bind(this)
+        } else {
+            this._subscribe(onFullfilled, onRejected)
+        }
 
-        return nextPromise
+        return newPromise
     }
+    
 
     /**
      * 
@@ -49,13 +61,13 @@ class PromiseCustom {
     catch(onRejected) {
         return this.then(null, onRejected);
     }
-    
+
     /**
      * 
      * @param {*} err 
      */
     _throw(err) {
-        throw err;
+        console.error(err)
     }
 
     /**
@@ -63,72 +75,59 @@ class PromiseCustom {
      * @param {PromiseCustom} promise 
      * @param {Function} callback 
      */
-    _makePromise(promise, callback){
+    _makePromise(promise, callback) {
         this.callback.call(
             promise,
-            this._resolve.bind(promise), 
-            this._reject.bind(promise)
-            )
+            this.resolve.bind(promise),
+            this.reject.bind(promise)
+        )
     }
 
-    _setPromise(promise){
-        promise._state = C.PENDING;
-        promise._result = undefined;
-        promise._fulfilledJobs = [];
-    }
-    
+
     /**
      * 
      * @param {*} value 
      */
-    _resolve(value){
-        if (this._state !== C.PENDING){
+    resolve(value) {
+        console.log('RESOLVE', value)
+        if (this._state !== C.PENDING) {
             return;
         }
 
         this._result = value;
-        this._state  = C.FULFILLED;
+        this._state = C.FULFILLED;
         this._jobs = [...this._fulfilledJobs]
-        this._schedule();
-    }
-
-    _fulfill(value){
-
+  
+        this._schedule()
     }
 
     /**
      * 
      * @param {*} reason 
      */
-    _reject(reason){
-        if (this._state !== C.PENDING){
+    reject(reason) {
+        if (this._state !== C.PENDING) {
             return;
         }
 
         this._result = reason;
-        this._state  = C.REJECTED;
+        this._state = C.REJECTED;
         this._jobs = [...this._rejectedJobs]
         this._schedule();
     }
 
-    _subscribe(onFullfilled, onRejected, param){
-        this._fulfilledJobs.push({
-            callback: onFullfilled,
-            param
-        })
-
-        this._rejectedJobs.push({
-            callback: onRejected,
-            param
-        })
+    _subscribe(onFullfilled, onRejected) {
+        this._fulfilledJobs.push(onFullfilled)
     }
 
-    _schedule(){
-        this._jobs.forEach(job =>{
-            if(job.callback){
-                setTimeout(job.callback, 1, this._result)
-            }
-        })
+    _schedule() {
+        this._jobs.forEach(this._hadleJob, this)
+    }
+
+    _hadleJob(job){
+        if(job){
+            setTimeout(job, 1, this._result)
+        }
     }
 }
 
