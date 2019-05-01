@@ -1,15 +1,7 @@
 const PromiseCustom = require('./PromiseCustom');
 
 const testCustom = new PromiseCustom((resolve, reject)=>{
-    resolve(1)
-})
-
-const testNative = new Promise((resolve, reject)=>{
-    resolve(1)
-})
-
-const simpleNative = new Promise((resolve, reject)=>{
-    return 1
+    setTimeout(resolve, 1000, 1)
 })
 
 testCustom.then(result =>{
@@ -18,10 +10,19 @@ testCustom.then(result =>{
 }).then(result =>{
     console.log('result from custom second then', result)
 })
+
+testCustom.then(result =>{
+    console.log('result from custom then second subscribe', result)
+    return 'to second custom';
+}).then(result =>{
+    console.log('result from custom then second subscribe', result)
+})
+
+
 console.log(testCustom)
 
 
-console.log('+'.repeat(20))
+// console.log('+'.repeat(20))
 
 
 // testNative.then(result =>{

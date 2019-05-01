@@ -18,7 +18,8 @@ class PromiseCustom {
 
         this._result = undefined;
         this._fulfilledJobs = [];
-
+        this._rejectedJobs = [];
+        this._jobs = [];
         
         if (typeof callback === 'function'){
             this._makePromise(this, callback)
@@ -33,18 +34,9 @@ class PromiseCustom {
      * @param {Function} onRejected 
      */
     then(onFullfilled, onRejected = this._throw) {
-        const fulfilledResult = onFullfilled(this._result);
-        let nextResult;
-
-        if(fulfilledResult instanceof PromiseCustom || fulfilledResult instanceof Promise){
-            nextResult = fulfilledResult._result;
-        }else{
-            nextResult = fulfilledResult;
-        }
-
         const nextPromise = new this.constructor(function(){});
-
-        nextPromise._result = nextResult;
+        
+        this._subscribe(onFullfilled, onRejected, this._result)
 
         return nextPromise
     }
@@ -95,7 +87,9 @@ class PromiseCustom {
 
         this._result = value;
         this._state  = C.FULFILLED;
-        
+        this._jobs = [...this._fulfilledJobs]
+        console.log('RESOLVE', this._fulfilledJobs)
+        this._schedule();
     }
 
     _fulfill(value){
@@ -113,9 +107,27 @@ class PromiseCustom {
 
         this._result = reason;
         this._state  = C.REJECTED;
+        this._jobs = [...this._rejectedJobs]
+        this._schedule();
     }
 
+    _subscribe(onFullfilled, onRejected, param){
+        this._fulfilledJobs.push({
+            callback: onFullfilled,
+            param
+        })
 
+        this._rejectedJobs.push({
+            callback: onRejected,
+            param
+        })
+    }
+
+    _schedule(){
+        this._jobs.forEach(job =>{
+            setTimeout(job.callback, 1, this._result)
+        })
+    }
 }
 
 
